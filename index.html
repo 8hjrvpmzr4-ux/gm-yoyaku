@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>出張手洗い洗車GM 予約</title>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+  :root { --ink:#16181d; --sub:#6b7280; --line:#e5e7eb; --bg:#f6f7f9; --card:#fff; --accent:#0f3d6e; --accent2:#e9f0f8; --ng:#c0392b; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif; background:var(--bg); color:var(--ink); }
+  header { background:var(--accent); color:#fff; padding:18px 16px 14px; }
+  header h1 { margin:0; font-size:18px; letter-spacing:.04em; }
+  header p { margin:4px 0 0; font-size:12px; opacity:.85; }
+  .steps { display:flex; gap:4px; padding:10px 16px; background:#fff; border-bottom:1px solid var(--line); font-size:11px; color:var(--sub); }
+  .steps span { flex:1; text-align:center; padding:4px 0; border-radius:4px; }
+  .steps span.on { background:var(--accent2); color:var(--accent); font-weight:700; }
+  main { padding:16px; max-width:560px; margin:0 auto; }
+  h2 { font-size:15px; margin:4px 0 12px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:10px; }
+  .menu { cursor:pointer; }
+  .menu.sel { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent2); }
+  .menu b { display:block; font-size:15px; }
+  .menu .price { color:var(--accent); font-weight:700; margin-top:4px; }
+  .menu small { color:var(--sub); display:block; margin-top:6px; line-height:1.5; }
+  .days { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .day { border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px 0; text-align:center; font-size:12px; cursor:pointer; }
+  .day b { display:block; font-size:15px; }
+  .day.ng { color:#c4c7cc; background:#fafafa; cursor:default; }
+  .day.sel { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .day .w0 { color:#d14; } .day .w6 { color:#2563eb; } .day.sel .w0, .day.sel .w6 { color:#fff; }
+  .month { font-size:13px; font-weight:700; margin:12px 0 6px; grid-column:1/-1; }
+  .times { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+  .time { border:1px solid var(--accent); color:var(--accent); background:#fff; border-radius:8px; padding:10px 0; text-align:center; font-weight:700; cursor:pointer; }
+  .time.sel { background:var(--accent); color:#fff; }
+  label { display:block; font-size:13px; font-weight:700; margin:14px 0 6px; }
+  label em { font-style:normal; color:#fff; background:var(--ng); font-size:10px; padding:1px 5px; border-radius:3px; margin-left:6px; vertical-align:1px; }
+  input, select, textarea { width:100%; font-size:16px; padding:11px; border:1px solid #cfd4da; border-radius:8px; background:#fff; color:var(--ink); }
+  textarea { min-height:80px; }
+  .hint { font-size:12px; color:var(--sub); margin-top:4px; line-height:1.5; }
+  .btn { display:block; width:100%; padding:14px; border:0; border-radius:10px; background:var(--accent); color:#fff; font-size:16px; font-weight:700; margin-top:18px; cursor:pointer; }
+  .btn:disabled { opacity:.4; }
+  .btn.ghost { background:#fff; color:var(--accent); border:1px solid var(--accent); margin-top:10px; }
+  dl { margin:0; } dt { font-size:12px; color:var(--sub); margin-top:10px; } dd { margin:2px 0 0; font-size:15px; word-break:break-all; }
+  .note { background:#fff8e6; border:1px solid #f3dfa8; border-radius:8px; padding:10px 12px; font-size:12px; line-height:1.6; }
+  .err { color:var(--ng); font-size:13px; margin-top:10px; }
+  .center { text-align:center; color:var(--sub); padding:30px 0; }
+  .hide { display:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="shopName">出張手洗い洗車GM</h1>
+  <p>LINE予約リクエスト</p>
+</header>
+<div class="steps"><span data-s="1">メニュー</span><span data-s="2">日時</span><span data-s="3">情報入力</span><span data-s="4">確認</span></div>
+<main>
+  <div id="loading" class="center">読み込み中…</div>
+
+  <section id="s1" class="hide">
+    <h2>メニューを選んでください</h2>
+    <div id="menus"></div>
+  </section>
+
+  <section id="s2" class="hide">
+    <h2>日付を選んでください</h2>
+    <div id="days" class="days"></div>
+    <div id="timeBox" class="hide">
+      <h2 style="margin-top:20px">開始時刻を選んでください</h2>
+      <div id="times" class="times"></div>
+    </div>
+    <button class="btn ghost" data-back="1">戻る</button>
+  </section>
+
+  <section id="s3" class="hide">
+    <h2>お客様情報を入力してください</h2>
+    <label for="f_name">お名前<em>必須</em></label>
+    <input id="f_name" autocomplete="name" placeholder="例：長崎 太郎">
+    <label for="f_phone">電話番号<em>必須</em></label>
+    <input id="f_phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="例：09012345678">
+    <label for="f_address">作業する場所の住所<em>必須</em></label>
+    <input id="f_address" autocomplete="street-address" placeholder="例：長崎市〇〇町1-2-3">
+    <label for="f_car">車種<em>必須</em></label>
+    <input id="f_car" placeholder="例：トヨタ アルファード">
+    <label for="f_place">作業場所<em>必須</em></label>
+    <select id="f_place">
+      <option value="">選択してください</option>
+      <option>ご自宅の敷地内（駐車場・ガレージ）</option>
+      <option>管理者の許可を得た駐車場</option>
+      <option>その他（ご要望欄に記入）</option>
+    </select>
+    <div class="hint">道路上（公道）での作業はお受けしていません。マンションなどの共用駐車場は、管理者の許可を事前にお取りください。</div>
+    <label for="f_utility">水道・電源の利用</label>
+    <select id="f_utility">
+      <option value="">わからない</option>
+      <option>水道・電源とも使える</option>
+      <option>水道のみ使える</option>
+      <option>電源のみ使える</option>
+      <option>どちらも使えない</option>
+    </select>
+    <label for="f_note">ご要望・ご質問</label>
+    <textarea id="f_note" placeholder="気になる汚れ、駐車場所の目印など"></textarea>
+    <div id="err3" class="err"></div>
+    <button class="btn" id="toConfirm">確認画面へ</button>
+    <button class="btn ghost" data-back="2">戻る</button>
+  </section>
+
+  <section id="s4" class="hide">
+    <h2>入力内容のご確認</h2>
+    <div class="card"><dl id="summary"></dl></div>
+    <div class="note">この時点では予約は確定していません。内容を確認のうえ、店舗からLINEで確定のご連絡をいたします。</div>
+    <div id="err4" class="err"></div>
+    <button class="btn" id="send">この内容でリクエストする</button>
+    <button class="btn ghost" data-back="3">戻る</button>
+  </section>
+
+  <section id="s5" class="hide">
+    <h2>予約リクエストを受け付けました</h2>
+    <div class="card"><dl id="done"></dl></div>
+    <div class="note">予約はまだ確定していません。店舗で空き状況を確認し、LINEで確定のご連絡をいたします。しばらくお待ちください。</div>
+    <button class="btn" id="close">閉じる</button>
+  </section>
+</main>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzeHMqdFlVY0AFELcNqw4K7ECuicJGbvLnTMPNWoKeJrW0MKHOnffWZYHquk2RgazmD7g/exec';   // Apps Script のウェブアプリURL（…/exec）
+const LIFF_ID = '';   // LIFF ID
+
+const state = { menus: [], menu: null, date: '', time: '', profile: null };
+const $ = id => document.getElementById(id);
+const W = ['日','月','火','水','木','金','土'];
+const yen = n => Number(n).toLocaleString('ja-JP') + '円';
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function show(n) {
+  ['loading','s1','s2','s3','s4','s5'].forEach(id => $(id).classList.add('hide'));
+  $(n === 0 ? 'loading' : 's' + n).classList.remove('hide');
+  document.querySelectorAll('.steps span').forEach(s => s.classList.toggle('on', Number(s.dataset.s) === Math.min(n, 4)));
+  window.scrollTo(0, 0);
+}
+async function api(params) {
+  const r = await fetch(GAS_URL + '?' + new URLSearchParams(params));
+  return r.json();
+}
+
+async function start() {
+  try {
+    if (LIFF_ID) {
+      await liff.init({ liffId: LIFF_ID });
+      if (!liff.isLoggedIn()) { liff.login(); return; }
+      try { state.profile = await liff.getProfile(); } catch (e) {}
+    }
+    const res = await api({ action: 'init' });
+    if (!res.ok) throw new Error(res.error);
+    state.menus = res.menus;
+    $('shopName').textContent = res.shop;
+    renderMenus();
+    show(1);
+  } catch (e) {
+    $('loading').textContent = '読み込みに失敗しました。時間をおいて開き直してください。';
+  }
+}
+
+function renderMenus() {
+  $('menus').innerHTML = state.menus.length ? state.menus.map(m =>
+    `<div class="card menu" data-id="${esc(m.id)}"><b>${esc(m.name)}</b><div class="price">${yen(m.price)}</div>${m.desc ? `<small>${esc(m.desc)}</small>` : ''}</div>`
+  ).join('') : '<div class="center">現在、予約できるメニューがありません。</div>';
+  document.querySelectorAll('.menu').forEach(el => el.onclick = () => {
+    state.menu = state.menus.find(m => m.id === el.dataset.id);
+    state.date = ''; state.time = '';
+    loadDays();
+  });
+}
+
+async function loadDays() {
+  show(0); $('loading').textContent = '空き状況を確認中…';
+  const res = await api({ action: 'days', menu: state.menu.id });
+  if (!res.ok) { $('loading').textContent = '空き状況を取得できませんでした。'; return; }
+  let html = '', month = '', first = true;
+  res.days.forEach(d => {
+    const [y, m, dd] = d.date.split('-').map(Number);
+    const wi = W.indexOf(d.w);
+    if (month !== y + '-' + m) {
+      month = y + '-' + m;
+      html += `<div class="month">${y}年${m}月</div>`;
+      if (first) { for (let i = 0; i < wi; i++) html += '<div></div>'; first = false; }
+      else { for (let i = 0; i < wi; i++) html += '<div></div>'; }
+    }
+    html += `<div class="day ${d.ok ? '' : 'ng'}" data-date="${d.date}" data-ok="${d.ok ? 1 : 0}"><span class="w${wi}">${d.w}</span><b>${dd}</b>${d.ok ? '○' : '×'}</div>`;
+  });
+  $('days').innerHTML = html;
+  $('timeBox').classList.add('hide');
+  document.querySelectorAll('.day').forEach(el => el.onclick = () => {
+    if (el.dataset.ok !== '1') return;
+    document.querySelectorAll('.day').forEach(x => x.classList.remove('sel'));
+    el.classList.add('sel');
+    state.date = el.dataset.date; state.time = '';
+    loadTimes();
+  });
+  show(2);
+}
+
+async function loadTimes() {
+  $('timeBox').classList.remove('hide');
+  $('times').innerHTML = '<div class="center" style="grid-column:1/-1">確認中…</div>';
+  const res = await api({ action: 'slots', menu: state.menu.id, date: state.date });
+  const slots = res.ok ? res.slots : [];
+  $('times').innerHTML = slots.length ? slots.map(t => `<div class="time" data-t="${t}">${t}</div>`).join('')
+    : '<div class="center" style="grid-column:1/-1">この日は空きがありません。</div>';
+  document.querySelectorAll('.time').forEach(el => el.onclick = () => {
+    state.time = el.dataset.t;
+    show(3);
+  });
+  $('timeBox').scrollIntoView({ behavior: 'smooth' });
+}
+
+function whenText() {
+  const [y, m, d] = state.date.split('-').map(Number);
+  const w = W[new Date(y, m - 1, d).getDay()];
+  const [h, mi] = state.time.split(':').map(Number);
+  const end = h * 60 + mi + Number(state.menu.minutes);
+  const endT = String(Math.floor(end / 60)).padStart(2, '0') + ':' + String(end % 60).padStart(2, '0');
+  return `${y}/${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}（${w}）${state.time}〜${endT}`;
+}
+function form() {
+  return {
+    name: $('f_name').value.trim(), phone: $('f_phone').value.replace(/[^0-9０-９+\-]/g, '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)),
+    address: $('f_address').value.trim(), car: $('f_car').value.trim(), place: $('f_place').value,
+    utility: $('f_utility').value, note: $('f_note').value.trim()
+  };
+}
+
+$('toConfirm').onclick = () => {
+  const f = form();
+  if (!f.name || !f.phone || !f.address || !f.car || !f.place) { $('err3').textContent = '必須の項目をすべて入力してください。'; return; }
+  if (f.phone.replace(/\D/g, '').length < 10) { $('err3').textContent = '電話番号を正しく入力してください。'; return; }
+  $('err3').textContent = '';
+  const items = [['メニュー', `${state.menu.name}（${yen(state.menu.price)}）`], ['日時', whenText()], ['お名前', f.name], ['電話番号', f.phone],
+    ['住所', f.address], ['車種', f.car], ['作業場所', f.place], ['水道・電源', f.utility || 'わからない'], ['ご要望', f.note || 'なし']];
+  $('summary').innerHTML = items.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
+  show(4);
+};
+
+$('send').onclick = async () => {
+  const btn = $('send'); btn.disabled = true; btn.textContent = '送信中…'; $('err4').textContent = '';
+  const f = form();
+  const body = Object.assign({ menuId: state.menu.id, date: state.date, time: state.time,
+    lineName: state.profile ? state.profile.displayName : '', lineUserId: state.profile ? state.profile.userId : '' }, f);
+  try {
+    const r = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+    const res = await r.json();
+    if (!res.ok) throw new Error(res.error);
+    $('done').innerHTML = [['予約番号', res.id], ['メニュー', `${res.menu}（${yen(res.price)}）`], ['日時', res.when]]
+      .map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
+    if (window.liff && LIFF_ID && liff.isInClient()) {
+      try {
+        await liff.sendMessages([{ type: 'text', text:
+          `【予約リクエスト】\n予約番号：${res.id}\nメニュー：${res.menu}\n日時：${res.when}\nお名前：${f.name}\n住所：${f.address}\n車種：${f.car}\n\n※まだ確定していません。確定のご連絡をお待ちください。` }]);
+      } catch (e) {}
+    }
+    show(5);
+  } catch (e) {
+    $('err4').textContent = e.message || '送信に失敗しました。';
+    btn.disabled = false; btn.textContent = 'この内容でリクエストする';
+  }
+};
+
+document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => show(Number(b.dataset.back)));
+$('close').onclick = () => { if (window.liff && LIFF_ID && liff.isInClient()) liff.closeWindow(); else location.reload(); };
+
+start();
+</script>
+</body>
+</html>
