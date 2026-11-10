@@ -129,7 +129,7 @@ const LIFF_ID = '2012532092-QE3Qp26w';   // LIFF ID
 const state = { menus: [], menu: null, date: '', time: '', profile: null };
 const $ = id => document.getElementById(id);
 const W = ['日','月','火','水','木','金','土'];
-const yen = n => Number(n).toLocaleString('ja-JP') + '円';
+const yen = n => Number(n).toLocaleString('ja-JP') + '円（税込）';
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 function show(n) {
@@ -235,7 +235,7 @@ $('toConfirm').onclick = () => {
   if (!f.name || !f.phone || !f.address || !f.car || !f.place) { $('err3').textContent = '必須の項目をすべて入力してください。'; return; }
   if (f.phone.replace(/\D/g, '').length < 10) { $('err3').textContent = '電話番号を正しく入力してください。'; return; }
   $('err3').textContent = '';
-  const items = [['メニュー', `${state.menu.name}（${yen(state.menu.price)}）`], ['日時', whenText()], ['お名前', f.name], ['電話番号', f.phone],
+  const items = [['メニュー', state.menu.name], ['料金', yen(state.menu.price)], ['日時', whenText()], ['お名前', f.name], ['電話番号', f.phone],
     ['住所', f.address], ['車種', f.car], ['作業場所', f.place], ['水道・電源', f.utility || 'わからない'], ['ご要望', f.note || 'なし']];
   $('summary').innerHTML = items.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
   show(4);
@@ -250,12 +250,12 @@ $('send').onclick = async () => {
     const r = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
     const res = await r.json();
     if (!res.ok) throw new Error(res.error);
-    $('done').innerHTML = [['予約番号', res.id], ['メニュー', `${res.menu}（${yen(res.price)}）`], ['日時', res.when]]
+    $('done').innerHTML = [['予約番号', res.id], ['メニュー', res.menu], ['料金', yen(res.price)], ['日時', res.when]]
       .map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
     if (window.liff && LIFF_ID && liff.isInClient()) {
       try {
         await liff.sendMessages([{ type: 'text', text:
-          `【予約リクエスト】\n予約番号：${res.id}\nメニュー：${res.menu}\n日時：${res.when}\nお名前：${f.name}\n住所：${f.address}\n車種：${f.car}\n\n※まだ確定していません。確定のご連絡をお待ちください。` }]);
+          `【予約リクエスト】\n予約番号：${res.id}\nメニュー：${res.menu}\n料金：${yen(res.price)}\n日時：${res.when}\nお名前：${f.name}\n住所：${f.address}\n車種：${f.car}\n\n※まだ確定していません。確定のご連絡をお待ちください。` }]);
       } catch (e) {}
     }
     show(5);
